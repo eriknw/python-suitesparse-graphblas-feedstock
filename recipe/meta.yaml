@@ -12,7 +12,11 @@ source:
 build:
   skip: true  # [py<311]
   number: 0
-  script: {{ PYTHON }} -m pip install . -vv
+  script:
+    # The sdist ships a utils.c that was cythonized against numpy 2.5 and only compiles
+    # with numpy >=2.5 headers; drop it so it is regenerated for the numpy used here.
+    - {{ PYTHON }} -c "import pathlib; pathlib.Path('suitesparse_graphblas/utils.c').unlink(missing_ok=True)"
+    - {{ PYTHON }} -m pip install . -vv
 
 requirements:
   build:
