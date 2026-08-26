@@ -11,7 +11,7 @@ source:
 
 build:
   skip: true  # [py<311]
-  number: 0
+  number: 1
   script:
     # The sdist ships a utils.c that was cythonized against numpy 2.5 and only compiles
     # with numpy >=2.5 headers; drop it so it is regenerated for the numpy used here.
@@ -48,6 +48,11 @@ test:
     - pip check
     - python -c "import platform ; print(platform.machine())"
     - python -c "from suitesparse_graphblas import lib, ffi"
+    # Fail loudly if libgraphblas was built without OpenMP. GraphBLAS only
+    # warns at configure time and still builds a serial library, so this is
+    # otherwise invisible: graphblas 10.5.0 shipped that way on osx-arm64
+    # while still depending on llvm-openmp.
+    - python -c "import suitesparse_graphblas as s; from suitesparse_graphblas import lib, ffi; s.initialize(); p = ffi.new('int32_t*'); assert lib.GxB_Global_Option_get_INT32(lib.GxB_LIBRARY_OPENMP, p) == lib.GrB_SUCCESS; assert p[0], 'libgraphblas was built without OpenMP'"
     - pytest -v --pyargs suitesparse_graphblas
   requires:
     - pip
